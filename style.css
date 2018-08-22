@@ -1,0 +1,22 @@
+* {
+  padding: 0;
+  margin: 0;
+}
+
+#play-screen {
+  position: relative;
+}
+
+canvas {
+  position: absolute;
+}
+
+#ui-layer {
+  z-index: 3;
+}
+#play-layer {
+  z-index: 2;
+}
+#bg-layer {
+  z-index: 1;
+}
