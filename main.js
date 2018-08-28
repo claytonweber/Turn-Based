@@ -4,22 +4,36 @@ var ctx = canvas.getContext("2d");
 var canvasBg = document.getElementById("bg-layer");
 var ctxBg = canvasBg.getContext("2d");
 
-var canvasUI = canvasUI = document.getElementById("ui-layer");
+var canvasUI = document.getElementById("ui-layer");
 var ctxUI = canvasUI.getContext("2d");
 
-var tree = new Image();
-tree.src = "tree.png";
+var canvasCollect = document.getElementById("collect-layer");
+var ctxCol = canvasCollect.getContext("2d");
 
 var tileSize = 40;
 var columns = 16;
 var rows = 12;
 
+var invulTimer = 75;
 var player = {
   playerX: 0,
-  playerY: 0
+  playerY: 0,
+  health: 5
 }
 
+var bomb = {
+  width: 20,
+  height: 20,
+  x: 120, 
+  y: 120
+}
 
+var baddy = new Image();
+baddy.src = "baddy.png";
+var baddyCount;
+var maxBaddyCount = 5;
+var baddies = [];
+var baddyMovementTimer = 50;
 
 var pw = 40; //player width
 var ph = 40; //player height
@@ -41,19 +55,17 @@ var bottomTouch = false;
 
 function startGame() {
   ctxS.clearRect(0, 0, splash.width, splash.height);
-
   drawLevel();
   drawPlayer();
+  drawBaddies();
   setInterval(loop, 30);
   
+  
 }
- 
  
 function drawLevel() {
   for(var i = 0; i <= 11; i++) {
       level.background[i].forEach(function(piss) {
-//        console.log(count)
-//        console.log(piss);
         if(piss == 1) {
           ctxBg.beginPath();
           ctxBg.rect(0 + (count * tileSize) , 0 + (i * tileSize), tileSize, tileSize);
@@ -65,8 +77,6 @@ function drawLevel() {
         if(count > 15) {
           count = 0;
         }
-//        console.log(i);
-//        console.log(count)   
       })
   }
   
@@ -102,6 +112,7 @@ function drawLevel() {
     })
   }
 
+  //GRID SYSTEM
   for(i=0; i <= columns; i += 1) {
     ctxUI.beginPath();
     ctxUI.moveTo(i * ph, 0);
@@ -118,12 +129,22 @@ function drawLevel() {
     ctxUI.stroke();
   } 
   
+  //HUD
+  ctxUI.font = "20px Arial";
+  ctxUI.fillStyle = "red";
+  ctxUI.fillText("Health" +  ' ' + player.health, 5, canvas.height - 12); 
+  
+  //collectibles
+  ctxCol.beginPath();
+  ctxCol.rect(bomb.x, bomb.y, bomb.width, bomb.height);
+  ctxCol.fillStyle = "pink";
+  ctxCol.fill();
+  ctxCol.closePath();
+
   checkCollision();
 }
 
 function updateLevel() {
-  
-  
   // COLLISION SHIT 
   for(i = 0; i < collisionElements.length; i ++) {
     ctx.beginPath();
@@ -136,6 +157,9 @@ function updateLevel() {
     ctx.closePath();
   }
   
+  for(e = 0; e < baddies.length; e++) {
+    ctx.drawImage(baddy, baddies[e].x, baddies[e].y);
+  } 
 //  console.log(collisionElements)
 }
  
@@ -147,14 +171,59 @@ function drawPlayer() {
   ctx.closePath();
 }
 
+function drawBaddies() {
+//  ctx.drawImage(baddy, 120, 80); 
+  
+  for(i=0; i < maxBaddyCount; i++) {
+    var rx =  Math.floor(Math.random() * 16) * 40;
+    var ry =  Math.floor(Math.random() * 12) * 40;
+       console.log(rx, ry);
+    
+    ctx.drawImage(baddy, rx, ry);
+    baddies[i] = {x: rx, y: ry};
+    
+  }
+}
+
+
+function baddyAI() {
+  var distanceFromBaddy = 200;
+  
+  //if player x is larger than baddy, increase baddy x.
+  //if player x - baddy x > player y - baddy y. move X. else move y.
+  baddies.forEach(function(m) {
+    //if player x is within a certain distance
+    if(player.playerX + distanceFromBaddy >= m.x) {
+      //if player y is within a certain distance
+      if(player.playerY + distanceFromBaddy >= m.y) {
+        if(m.x > player.playerX) {
+          m.x -= 40;
+        } else if(m.x < player.playerX) {
+          m.x += 40;
+        } 
+        
+//      console.log(m);
+      }
+      
+    }
+ 
+  })
+  baddyMovementTimer = 0;
+  console.log(player.playerX + distanceFromBaddy);
+  
+}
+
 function loop() {
   //every frame the standard canvas is cleared so that it can be updated 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawPlayer();
+//  drawBaddies();
   updateLevel();
-//  fire();
-  speedThrottle++;
   
+  timers();
+
+  baddyCollision();
+  if(baddyMovementTimer > 100) {baddyAI(); }
   if(player.playerX === collisionElements.x && player.playerY === collisionElements.y) {
     console.log("touch touch");
   }
@@ -165,9 +234,16 @@ function loop() {
     if(downPressed) checkCollision();
   }
   
+  console.log(baddyMovementTimer);
   if(spacePressed) fire();
   
   document.addEventListener("mousedown", getPosition, false);
+}
+
+function timers() {
+  speedThrottle++;
+  baddyMovementTimer++;
+  invulTimer++;
 }
 
 function playerMovement() {
@@ -209,6 +285,33 @@ function playerMovement() {
       }
     }
   }
+}
+
+function baddyCollision() {
+  baddies.forEach(function(e) {
+//      console.log(e["x"]);
+      
+      if(player.playerX === e["x"]) {
+        if(player.playerY === e["y"]) {
+          console.log("touching!");
+          updateHUD();
+        }
+      }
+    })
+}
+
+function updateHUD() {
+    //HUD
+  if(invulTimer > 100) {
+    player.health--;
+    ctxUI.clearRect(0, 400, 100, 100);
+    ctxUI.font = "20px Arial";
+    ctxUI.fillStyle = "red";
+    ctxUI.fillText("Health" +  ' ' + player.health, 5, canvas.height - 12); 
+    invulTimer = 0;
+  }
+  
+  
 }
 
 function checkCollision() {
@@ -257,6 +360,18 @@ function checkCollision() {
   playerMovement();
 }
 
+function boom() {
+  if(player.playerX === bomb.x) {
+    if(player.playerY === bomb.y) {
+      console.log("have bomb");
+      baddies.forEach(function(e) {
+        baddies.pop(e);
+      })
+    }
+  }
+  
+  
+} 
 
 function fire() {
   if(spacePressed) {
@@ -269,9 +384,18 @@ function fire() {
     
     ctx.strokeStyle = "red";
     ctx.stroke();
+    
+    //using this shit for debug
+    console.log(invulTimer);
+//    console.log(player);
+    boom();
   }
 }
 
+
+
+
+//this shit is for the "level editor"
 function getPosition(event){
   console.log("hello")
   var x = event.x;
