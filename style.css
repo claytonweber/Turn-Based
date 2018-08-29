@@ -20,3 +20,10 @@ canvas {
 #bg-layer {
   z-index: 1;
 }
+
+#collect-layer {
+  z-index: 2;
+}
+#hud-layer {
+  z-index: 4;
+}

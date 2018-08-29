@@ -10,9 +10,14 @@ var ctxUI = canvasUI.getContext("2d");
 var canvasCollect = document.getElementById("collect-layer");
 var ctxCol = canvasCollect.getContext("2d");
 
+var canvasHUD = document.getElementById("hud-layer");
+var ctxHUD = canvasHUD.getContext("2d");
+
 var tileSize = 40;
 var columns = 16;
 var rows = 12;
+
+var currentLevel = 0;
 
 var invulTimer = 75;
 var player = {
@@ -24,9 +29,18 @@ var player = {
 var bomb = {
   width: 20,
   height: 20,
-  x: 120, 
+  x: canvas.width - 20, 
   y: 120
 }
+
+var doorway = {
+  width: 20,
+  height: 40,
+  x: canvas.width - 20,
+  y: 160
+}
+
+
 
 var baddy = new Image();
 baddy.src = "baddy.png";
@@ -39,7 +53,7 @@ var pw = 40; //player width
 var ph = 40; //player height
 var playerSpeed = 40;
 var speedThrottle = 500;
-var currentTile = level.background[0, 0];
+var currentTile = level[currentLevel].background[0, 0];
 
 var collisionElements = [];
 
@@ -64,8 +78,9 @@ function startGame() {
 }
  
 function drawLevel() {
+  //this just draws the background
   for(var i = 0; i <= 11; i++) {
-      level.background[i].forEach(function(piss) {
+      level[currentLevel].background[i].forEach(function(piss) {
         if(piss == 1) {
           ctxBg.beginPath();
           ctxBg.rect(0 + (count * tileSize) , 0 + (i * tileSize), tileSize, tileSize);
@@ -84,7 +99,7 @@ function drawLevel() {
   for(var j = 0; j <= 11; j++) {
     var shitCount = 0;
 //    console.log(j)
-    level.collision[j].forEach(function(shit) {
+    level[currentLevel].collision[j].forEach(function(shit) {
 //    console.log(j , shit);
     
     if(shit === 4) {
@@ -130,14 +145,20 @@ function drawLevel() {
   } 
   
   //HUD
-  ctxUI.font = "20px Arial";
-  ctxUI.fillStyle = "red";
-  ctxUI.fillText("Health" +  ' ' + player.health, 5, canvas.height - 12); 
+  ctxHUD.font = "20px Arial";
+  ctxHUD.fillStyle = "red";
+  ctxHUD.fillText("Health" +  ' ' + player.health, 5, canvas.height -12); 
   
-  //collectibles
+  //collectibles 
   ctxCol.beginPath();
   ctxCol.rect(bomb.x, bomb.y, bomb.width, bomb.height);
   ctxCol.fillStyle = "pink";
+  ctxCol.fill();
+  ctxCol.closePath();
+  
+  ctxCol.beginPath();
+  ctxCol.rect(canvas.width - 20, 160, doorway.width, doorway.height);
+  ctxCol.fillStyle = "brown";
   ctxCol.fill();
   ctxCol.closePath();
 
@@ -184,7 +205,6 @@ function drawBaddies() {
     
   }
 }
-
 
 function baddyAI() {
   var distanceFromBaddy = 200;
@@ -234,10 +254,11 @@ function loop() {
     if(downPressed) checkCollision();
   }
   
-  console.log(baddyMovementTimer);
+//  console.log(baddyMovementTimer);
   if(spacePressed) fire();
   
-  document.addEventListener("mousedown", getPosition, false);
+  /////this is needed for the "level editor/////
+//  document.addEventListener("mousedown", getPosition, false);
 }
 
 function timers() {
@@ -304,14 +325,12 @@ function updateHUD() {
     //HUD
   if(invulTimer > 100) {
     player.health--;
-    ctxUI.clearRect(0, 400, 100, 100);
-    ctxUI.font = "20px Arial";
-    ctxUI.fillStyle = "red";
-    ctxUI.fillText("Health" +  ' ' + player.health, 5, canvas.height - 12); 
+    ctxHUD.clearRect(0, 0, canvas.width, canvas.height);
+    ctxHUD.font = "20px Arial";
+    ctxHUD.fillStyle = "red";
+    ctxHUD.fillText("Health" +  ' ' + player.health, 5, canvas.height-12); 
     invulTimer = 0;
   }
-  
-  
 }
 
 function checkCollision() {
@@ -361,17 +380,37 @@ function checkCollision() {
 }
 
 function boom() {
-  if(player.playerX === bomb.x) {
+  if(player.playerX + 20 === bomb.x) {
     if(player.playerY === bomb.y) {
       console.log("have bomb");
       baddies.forEach(function(e) {
         baddies.pop(e);
-      })
+      });
+      
+      
     }
-  }
-  
-  
+  } 
 } 
+
+function levelNav() {
+  if(player.playerX + 20 === doorway.x) {
+    if(player.playerY === doorway.y) {
+//      console.log("have bomb");
+      baddies.forEach(function(e) {
+        baddies.pop(e);
+        console.log(baddies);
+      });
+      collisionElements.forEach(function(e) {
+        collisionElements.pop(e);
+      });
+      currentLevel++;
+      console.log(level[currentLevel]["name"]);
+      player.playerX = 0;
+      drawLevel();
+      
+    }
+  } 
+}
 
 function fire() {
   if(spacePressed) {
@@ -389,6 +428,7 @@ function fire() {
     console.log(invulTimer);
 //    console.log(player);
     boom();
+    levelNav();
   }
 }
 

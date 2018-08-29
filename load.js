@@ -31,6 +31,12 @@ function update() {
       startGame();
       spacePressed = false;
     }
+    
+    if(enterPressed) {
+      levelEditor();
+//      console.log("enter pressed");
+      gameState = 3;
+    }
   }
 } 
 
