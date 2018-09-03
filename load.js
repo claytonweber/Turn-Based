@@ -1,4 +1,4 @@
-var splash = document.getElementById("splash-layer");
+ var splash = document.getElementById("splash-layer");
 var ctxS = splash.getContext("2d");
 var gameState = 1;
 

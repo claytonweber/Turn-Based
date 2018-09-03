@@ -1,6 +1,9 @@
 var canvas = document.getElementById("play-layer");
 var ctx = canvas.getContext("2d");
 
+var canvasCollision = document.getElementById("collision-layer");
+var ctxCollision = canvasCollision.getContext("2d");
+
 var canvasBg = document.getElementById("bg-layer");
 var ctxBg = canvasBg.getContext("2d");
 
@@ -17,15 +20,19 @@ var tileSize = 40;
 var columns = 16;
 var rows = 12;
 
-var currentLevel = 0;
+var currentLevel = level.indexOf(home);
 
 var invulTimer = 75;
 var player = {
-  playerX: 0,
-  playerY: 0,
+  playerX: 200,
+  playerY: 200,
   health: 5
 }
 
+var backgroundColors = {
+  dirtPath : "tan"
+}
+ 
 var bomb = {
   width: 20,
   height: 20,
@@ -36,24 +43,46 @@ var bomb = {
 var doorway = {
   width: 20,
   height: 40,
-  x: canvas.width - 20,
-  y: 160
+  x: canvas.width - 520,
+  y: 40 
 }
 
-
+// trista wants to be a slinky boy from monster's inc but a ferret weilding a sword
+// mike 
+// collin
+// zach
 
 var baddy = new Image();
 baddy.src = "baddy.png";
 var baddyCount;
-var maxBaddyCount = 5;
 var baddies = [];
 var baddyMovementTimer = 50;
+
+var skeeter = new Image();
+skeeter.src = "skeeter.png";
+var spriteSheetWidth = 80;
+var spriteSheetHeight = 40;
+var skeeterInfo = {
+  spriteSheetWidth: 80, //full width
+  spriteSheetHeight: 40,  //full height
+  col: 2,
+  row: 1,
+  width: spriteSheetWidth/2,
+  height: spriteSheetHeight,
+  currentFrame: 0,
+  frameCount: 2,
+  x: 80,
+  y: 80,
+  srcX: 0,
+  srcY: 0,
+  animationTimer: 0
+}
 
 var pw = 40; //player width
 var ph = 40; //player height
 var playerSpeed = 40;
 var speedThrottle = 500;
-var currentTile = level[currentLevel].background[0, 0];
+//var currentTile = level[currentLevel].background[0, 0];
 
 var collisionElements = [];
 
@@ -72,22 +101,36 @@ function startGame() {
   drawLevel();
   drawPlayer();
   drawBaddies();
+  drawNPC();
   setInterval(loop, 30);
-  
-  
+
 }
  
 function drawLevel() {
   //this just draws the background
   for(var i = 0; i <= 11; i++) {
       level[currentLevel].background[i].forEach(function(piss) {
+        if(piss == 0) {
+          ctxBg.beginPath();
+          ctxBg.rect(0 + (count * tileSize) , 0 + (i * tileSize), tileSize, tileSize);
+          ctxBg.fillStyle = backgroundColors.dirtPath;
+          ctxBg.fill();
+          ctxBg.closePath();
+          }  
         if(piss == 1) {
           ctxBg.beginPath();
           ctxBg.rect(0 + (count * tileSize) , 0 + (i * tileSize), tileSize, tileSize);
           ctxBg.fillStyle = "#00FF00";
           ctxBg.fill();
           ctxBg.closePath();
-          }  
+          }
+        if(piss == 2) {
+          ctxBg.beginPath();
+          ctxBg.rect(0 + (count * tileSize) , 0 + (i * tileSize), tileSize, tileSize);
+          ctxBg.fillStyle = "green";
+          ctxBg.fill();
+          ctxBg.closePath();
+        }
         count++;
         if(count > 15) {
           count = 0;
@@ -102,12 +145,12 @@ function drawLevel() {
     level[currentLevel].collision[j].forEach(function(shit) {
 //    console.log(j , shit);
     
-    if(shit === 4) {
-      ctx.beginPath();
-      ctx.rect(0 + (count2 * tileSize) , 0 + (j * tileSize), tileSize, tileSize);
-      ctx.fillStyle = "green";
-      ctx.fill();
-      ctx.closePath();
+    if(shit === 1) {
+      ctxCollision.beginPath();
+      ctxCollision.rect(0 + (count2 * tileSize) , 0 + (j * tileSize), tileSize, tileSize);
+      ctxCollision.fillStyle = "green";
+      ctxCollision.fill();
+      ctxCollision.closePath();
 
       //every time shit == 4, create an object with those values,
       //an empty array will be created for colmns that dont have collision elements??
@@ -157,7 +200,7 @@ function drawLevel() {
   ctxCol.closePath();
   
   ctxCol.beginPath();
-  ctxCol.rect(canvas.width - 20, 160, doorway.width, doorway.height);
+  ctxCol.rect(doorway.x, doorway.y, doorway.width, doorway.height);
   ctxCol.fillStyle = "brown";
   ctxCol.fill();
   ctxCol.closePath();
@@ -168,14 +211,14 @@ function drawLevel() {
 function updateLevel() {
   // COLLISION SHIT 
   for(i = 0; i < collisionElements.length; i ++) {
-    ctx.beginPath();
+    ctxCollision.beginPath();
     //I only did it like this bc idk how to make it not add empty objects in the draw level create collision thing
     if(collisionElements[i] != undefined) {
-      ctx.rect(collisionElements[i].x, collisionElements[i].y, tileSize, tileSize);
+      ctxCollision.rect(collisionElements[i].x, collisionElements[i].y, tileSize, tileSize);
     }
-    ctx.fillStyle = "green";
-    ctx.fill();
-    ctx.closePath();
+    ctxCollision.fillStyle = "red";
+    ctxCollision.fill();
+    ctxCollision.closePath();
   }
   
   for(e = 0; e < baddies.length; e++) {
@@ -194,14 +237,15 @@ function drawPlayer() {
 
 function drawBaddies() {
 //  ctx.drawImage(baddy, 120, 80); 
-  
-  for(i=0; i < maxBaddyCount; i++) {
+  console.log("drawing baddies");
+  for(i=0; i < level[currentLevel]["maxBaddyCount"]; i++) {
     var rx =  Math.floor(Math.random() * 16) * 40;
     var ry =  Math.floor(Math.random() * 12) * 40;
        console.log(rx, ry);
     
     ctx.drawImage(baddy, rx, ry);
     baddies[i] = {x: rx, y: ry};
+    console.log(baddies[i]);
     
   }
 }
@@ -229,8 +273,12 @@ function baddyAI() {
  
   })
   baddyMovementTimer = 0;
-  console.log(player.playerX + distanceFromBaddy);
+//  console.log(player.playerX + distanceFromBaddy);
   
+}
+
+function drawNPC() {
+  ctx.drawImage(skeeter, 0, 0, 40, 40, 40, 40, 40, 40);
 }
 
 function loop() {
@@ -241,7 +289,7 @@ function loop() {
   updateLevel();
   
   timers();
-
+  animate();
   baddyCollision();
   if(baddyMovementTimer > 100) {baddyAI(); }
   if(player.playerX === collisionElements.x && player.playerY === collisionElements.y) {
@@ -257,14 +305,28 @@ function loop() {
 //  console.log(baddyMovementTimer);
   if(spacePressed) fire();
   
+  
   /////this is needed for the "level editor/////
 //  document.addEventListener("mousedown", getPosition, false);
 }
 
+function animate() {
+  
+  updateFrame();
+  ctx.drawImage(skeeter, skeeterInfo.srcX, skeeterInfo.srcY, skeeterInfo.width, skeeterInfo.height, skeeterInfo.x, skeeterInfo.y, skeeterInfo.width, skeeterInfo.height);
+}
+function updateFrame() {
+  if(skeeterInfo.animationTimer > 30) { 
+    skeeterInfo.currentFrame = ++skeeterInfo.currentFrame % skeeterInfo.frameCount;
+    skeeterInfo.animationTimer = 0;
+  }
+  skeeterInfo.srcX = skeeterInfo.currentFrame * skeeterInfo.width;
+}
 function timers() {
   speedThrottle++;
   baddyMovementTimer++;
   invulTimer++;
+  skeeterInfo.animationTimer++;
 }
 
 function playerMovement() {
@@ -393,21 +455,21 @@ function boom() {
 } 
 
 function levelNav() {
-  if(player.playerX + 20 === doorway.x) {
+  if(player.playerX === doorway.x) {
     if(player.playerY === doorway.y) {
 //      console.log("have bomb");
       baddies.forEach(function(e) {
-        baddies.pop(e);
+//        baddies.pop(e);
         console.log(baddies);
       });
       collisionElements.forEach(function(e) {
         collisionElements.pop(e);
       });
-      currentLevel++;
+      currentLevel = level.indexOf(peach);
       console.log(level[currentLevel]["name"]);
       player.playerX = 0;
       drawLevel();
-      
+      drawBaddies();
     }
   } 
 }
@@ -425,7 +487,7 @@ function fire() {
     ctx.stroke();
     
     //using this shit for debug
-    console.log(invulTimer);
+//    console.log(invulTimer);
 //    console.log(player);
     boom();
     levelNav();
@@ -435,24 +497,3 @@ function fire() {
 
 
 
-//this shit is for the "level editor"
-function getPosition(event){
-  console.log("hello")
-  var x = event.x;
-  var y = event.y;
-
-
-  x -= canvas.offsetLeft;
-  y -= canvas.offsetTop;
-
-  console.log("x:" + x + " y:" + y);
-  
-  
-    collisionElements.push({x: x, y: y})
-    ctx.beginPath();
-    ctx.rect(0, 0, tileSize, tileSize);
-    ctx.fillStyle = "black";
-    ctx.fill();
-    ctx.closePath(); 
-  
-}

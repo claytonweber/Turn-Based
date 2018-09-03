@@ -27,3 +27,15 @@ canvas {
 #hud-layer {
   z-index: 4;
 }
+
+
+/*collision layer sits on the same index as bg so that you can get an idea of where you cant walk*/
+#collision-layer {
+  z-index: 0;
+  opacity: .5;
+}
+
+#arrays {
+  position: relative;
+  top: 500px;
+}

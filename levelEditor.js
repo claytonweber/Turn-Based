@@ -1,20 +1,11 @@
-var customLevel = [
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], 
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], 
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], 
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], 
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], 
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], 
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], 
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], 
-  [1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0], 
-  [1,1,1,1,1,0,1,1,1,0,0,0,0,0,0,0], 
-  [1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0], 
-  [1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0]];
+var customLevel = home.background;
+var collisionMap = false;
+var rowCount = 0,
+    rowCount2 = 0,
+    rowCount3 = 0,
+    rowCount4 = 0;
 
-var rowCount = 0;
-
-
+//console.log("CURRENTLY EDITING" + `${customLevel}`)
 
 
 function levelEditor() {
@@ -43,6 +34,13 @@ function levelEditor() {
         ctxBg.beginPath();
         ctxBg.rect(0 + (rowCount * tileSize) , 0 + (i * tileSize), tileSize, tileSize);
         ctxBg.fillStyle = "#00FF00";
+        ctxBg.fill();
+        ctxBg.closePath();
+        }  
+      if(piss == 2) { 
+        ctxBg.beginPath();
+        ctxBg.rect(0 + (rowCount * tileSize) , 0 + (i * tileSize), tileSize, tileSize);
+        ctxBg.fillStyle = "green";
         ctxBg.fill();
         ctxBg.closePath();
         }  
@@ -80,22 +78,45 @@ function getPosition(event){
     var row = closestEdgeX/40;
     var col = closestEdgeY/40;
     
-    if(customLevel[col][row] == 0) {
-      console.log("0 -> 1", col, row);
-      customLevel[col][row] = 1;
-    }   
     
-    else if(customLevel[col][row] == 1) {
-      console.log("1 -> 0", col, row);
-      customLevel[col][row] = 0;
+    if(collisionMap ==  true) {
+      if(customLevel[col][row] == 0) {
+        console.log("0 -> 1", col, row);
+        customLevel[col][row] = 1;
+      }   
+    
+      else if(customLevel[col][row] == 1) {
+        console.log("1 -> 0", col, row);
+        customLevel[col][row] = 0;
+      } 
     }
-      
-//    console.log(customLevel[col][row]);
-//    console.log(customLevel[col]);
-    var customString = JSON.stringify(customLevel);
-    var prettyCustomString = customString.replace(/],/g, "], \n");
+    if(collisionMap == false) {
+        if(customLevel[col][row] == 0) {
+          console.log("0 -> 1", col, row);
+          customLevel[col][row] = 1;
+        }   
     
-    console.log(prettyCustomString);
+        else if(customLevel[col][row] == 1) {
+          console.log("1 -> 0", col, row);
+          customLevel[col][row] = 2;
+        }
+
+        else if(customLevel[col][row] == 2) {
+          console.log("1 -> 0", col, row);
+          customLevel[col][row] = 0;
+        }
+    }
+  
+
+    
+    
+   
+
+    var customString = JSON.stringify(customLevel);
+    var prettyCustomString = customString.replace(/,/g, "," + " ");
+    var prettierCustomString = prettyCustomString.replace(/\[/g, '\n' + '\[');
+    console.log(prettierCustomString);
+   
     
 //    collisionElements.push({x: x, y: y});
 //    ctx.beginPath();
@@ -122,6 +143,18 @@ function updateCustomLevel() {
       rowCount++;
       if(rowCount > 15) {
         rowCount = 0;
+      }
+      
+      if(piss == 2) { 
+        ctxBg.beginPath(); 
+        ctxBg.rect(0 + (rowCount2 * tileSize) , 0 + (i * tileSize), tileSize, tileSize);
+        ctxBg.fillStyle = "green";
+        ctxBg.fill();
+        ctxBg.closePath();
+        }  
+      rowCount2++;
+      if(rowCount2 > 15) {
+        rowCount2 = 0;
       }
 //      if(piss == 0) {
 //        ctxBg.beginPath();
