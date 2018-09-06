@@ -20,6 +20,8 @@ var tileSize = 40;
 var columns = 16;
 var rows = 12;
 
+
+
 var currentLevel = level.indexOf(home);
 
 var invulTimer = 75;
@@ -47,36 +49,14 @@ var doorway = {
   y: 40 
 }
 
+var enemyWeightTotal = 0;
+
+
 // trista wants to be a slinky boy from monster's inc but a ferret weilding a sword
 // mike 
 // collin
 // zach
 
-var baddy = new Image();
-baddy.src = "baddy.png";
-var baddyCount;
-var baddies = [];
-var baddyMovementTimer = 50;
-
-var skeeter = new Image();
-skeeter.src = "skeeter.png";
-var spriteSheetWidth = 80;
-var spriteSheetHeight = 40;
-var skeeterInfo = {
-  spriteSheetWidth: 80, //full width
-  spriteSheetHeight: 40,  //full height
-  col: 2,
-  row: 1,
-  width: spriteSheetWidth/2,
-  height: spriteSheetHeight,
-  currentFrame: 0,
-  frameCount: 2,
-  x: 80,
-  y: 80,
-  srcX: 0,
-  srcY: 0,
-  animationTimer: 0
-}
 
 var pw = 40; //player width
 var ph = 40; //player height
@@ -100,8 +80,10 @@ function startGame() {
   ctxS.clearRect(0, 0, splash.width, splash.height);
   drawLevel();
   drawPlayer();
-  drawBaddies();
-  drawNPC();
+  // create a check level function that checks what nps and baddies need to be loaded
+  drawEnemies();
+  drawNPC(dude);  
+//  drawNPC(redBaddy);
   setInterval(loop, 30);
 
 }
@@ -220,10 +202,17 @@ function updateLevel() {
     ctxCollision.fill();
     ctxCollision.closePath();
   }
-  
-  for(e = 0; e < baddies.length; e++) {
-    ctx.drawImage(baddy, baddies[e].x, baddies[e].y);
-  } 
+  //might want to use a switch break for these?
+  if(enemies != null) {
+    for(e = 0; e < enemies.length; e++) {
+      if(enemies[e].type == 'blueSplat') {
+        ctx.drawImage(blueSplatImage, enemies[e].x, enemies[e].y);
+      }
+      if(enemies[e].type == 'redSplat') {
+        ctx.drawImage(redSplatImage, enemies[e].x, enemies[e].y);
+      }
+    } 
+  }
 //  console.log(collisionElements)
 }
  
@@ -235,18 +224,33 @@ function drawPlayer() {
   ctx.closePath();
 }
 
-function drawBaddies() {
+function drawEnemies() {
 //  ctx.drawImage(baddy, 120, 80); 
-  console.log("drawing baddies");
-  for(i=0; i < level[currentLevel]["maxBaddyCount"]; i++) {
-    var rx =  Math.floor(Math.random() * 16) * 40;
-    var ry =  Math.floor(Math.random() * 12) * 40;
-       console.log(rx, ry);
+//  console.log("drawEnemies")
+  console.log(enemyWeightTotal)
+  for(i=0; i < level[currentLevel]["maxEnemyCount"]; i++) {
+    var randomN = Math.random();
+//    console.log(randomN);
+    if(randomN > 0.5) {
+      var rx =  Math.floor(Math.random() * 16) * 40;
+      var ry =  Math.floor(Math.random() * 12) * 40;
+      var enemyName = 'blueSplat' + i;
+      enemies[i] = new Enemy(blueSplat);
+      ctx.drawImage(blueSplatImage, rx, ry);
+      enemies[i] = {x: rx, y: ry, name: enemyName, type: 'blueSplat'};
+      enemyWeightTotal += blueSplat.enemyWeight;
+    }
+    if(randomN < 0.5) {
+      var rx =  Math.floor(Math.random() * 16) * 40;
+      var ry =  Math.floor(Math.random() * 12) * 40;
+      enemies[i] = new Enemy(redSplat);
+      ctx.drawImage(redSplatImage, rx, ry);
+      var enemyName = 'redSplat' + i;
+      enemies[i] = {x: rx, y: ry, name: enemyName, type: 'redSplat'};
+      enemyWeightTotal += redSplat.enemyWeight;
+    }
     
-    ctx.drawImage(baddy, rx, ry);
-    baddies[i] = {x: rx, y: ry};
-    console.log(baddies[i]);
-    
+
   }
 }
 
@@ -255,7 +259,7 @@ function baddyAI() {
   
   //if player x is larger than baddy, increase baddy x.
   //if player x - baddy x > player y - baddy y. move X. else move y.
-  baddies.forEach(function(m) {
+  enemies.forEach(function(m) {
     //if player x is within a certain distance
     if(player.playerX + distanceFromBaddy >= m.x) {
       //if player y is within a certain distance
@@ -272,13 +276,16 @@ function baddyAI() {
     }
  
   })
-  baddyMovementTimer = 0;
+  enemyMovementTimer = 0;
 //  console.log(player.playerX + distanceFromBaddy);
   
 }
 
-function drawNPC() {
-  ctx.drawImage(skeeter, 0, 0, 40, 40, 40, 40, 40, 40);
+function drawNPC(i) {
+  //using i saves time
+  var x =  `${i.name}`+`Image`;
+  console.log(x)
+  ctx.drawImage(dudeImage, i.srcX, i.srcY, i.width, i.height, i.x, i.y, i.width, i.height);
 }
 
 function loop() {
@@ -291,7 +298,7 @@ function loop() {
   timers();
   animate();
   baddyCollision();
-  if(baddyMovementTimer > 100) {baddyAI(); }
+  if(enemyMovementTimer > 100) {baddyAI(); }
   if(player.playerX === collisionElements.x && player.playerY === collisionElements.y) {
     console.log("touch touch");
   }
@@ -313,7 +320,8 @@ function loop() {
 function animate() {
   
   updateFrame();
-  ctx.drawImage(skeeter, skeeterInfo.srcX, skeeterInfo.srcY, skeeterInfo.width, skeeterInfo.height, skeeterInfo.x, skeeterInfo.y, skeeterInfo.width, skeeterInfo.height);
+  ctx.drawImage(dudeImage, skeeterInfo.srcX, skeeterInfo.srcY, skeeterInfo.width, skeeterInfo.height, skeeterInfo.x, skeeterInfo.y, skeeterInfo.width, skeeterInfo.height);
+//  ctx.drawImage(dudeImage, skeeterInfo.srcX, skeeterInfo.srcY, skeeterInfo.width, skeeterInfo.height, skeeterInfo.x, skeeterInfo.y, skeeterInfo.width, skeeterInfo.height);
 }
 function updateFrame() {
   if(skeeterInfo.animationTimer > 30) { 
@@ -324,7 +332,7 @@ function updateFrame() {
 }
 function timers() {
   speedThrottle++;
-  baddyMovementTimer++;
+  enemyMovementTimer++;
   invulTimer++;
   skeeterInfo.animationTimer++;
 }
@@ -371,7 +379,7 @@ function playerMovement() {
 }
 
 function baddyCollision() {
-  baddies.forEach(function(e) {
+  enemies.forEach(function(e) {
 //      console.log(e["x"]);
       
       if(player.playerX === e["x"]) {
@@ -458,9 +466,9 @@ function levelNav() {
   if(player.playerX === doorway.x) {
     if(player.playerY === doorway.y) {
 //      console.log("have bomb");
-      baddies.forEach(function(e) {
+      enemies.forEach(function(e) {
 //        baddies.pop(e);
-        console.log(baddies);
+//        console.log(enemies);
       });
       collisionElements.forEach(function(e) {
         collisionElements.pop(e);
@@ -469,7 +477,7 @@ function levelNav() {
       console.log(level[currentLevel]["name"]);
       player.playerX = 0;
       drawLevel();
-      drawBaddies();
+      drawEnemies();
     }
   } 
 }
